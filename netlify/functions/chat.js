@@ -4,26 +4,53 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+    const body = JSON.parse(event.body);
+
+    // Convert Anthropic format to Gemini format
+    const messages = body.messages || [];
+    const systemPrompt = body.system || '';
+
+    const geminiMessages = messages.map(msg => ({
+      role: msg.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    const geminiBody = {
+      system_instruction: {
+        parts: [{ text: systemPrompt }]
       },
-      body: event.body
-    });
+      contents: geminiMessages,
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.7
+      }
+    };
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody)
+      }
+    );
 
     const data = await response.json();
+
+    // Convert Gemini response back to Anthropic format
+    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'I could not generate a response.';
+
     return {
-      statusCode: response.status,
-      body: JSON.stringify(data)
+      statusCode: 200,
+      body: JSON.stringify({
+        content: [{ type: 'text', text: text }]
+      })
     };
 
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to reach Anthropic API' })
+      body: JSON.stringify({ error: 'Failed to reach Gemini API' })
     };
   }
 };
