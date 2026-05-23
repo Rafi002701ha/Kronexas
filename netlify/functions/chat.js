@@ -6,7 +6,6 @@ exports.handler = async function(event, context) {
   try {
     const body = JSON.parse(event.body);
 
-    // Convert Anthropic format to Gemini format
     const messages = body.messages || [];
     const systemPrompt = body.system || '';
 
@@ -37,7 +36,21 @@ exports.handler = async function(event, context) {
 
     const data = await response.json();
 
-    // Convert Gemini response back to Anthropic format
+    // Log full response for debugging
+    console.log('Gemini status:', response.status);
+    console.log('Gemini response:', JSON.stringify(data));
+
+    // Check for API error
+    if (data.error) {
+      console.log('Gemini error:', data.error.message);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          content: [{ type: 'text', text: `API Error: ${data.error.message}` }]
+        })
+      };
+    }
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'I could not generate a response.';
 
     return {
@@ -48,9 +61,10 @@ exports.handler = async function(event, context) {
     };
 
   } catch (error) {
+    console.log('Catch error:', error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to reach Gemini API' })
+      body: JSON.stringify({ error: 'Failed to reach Gemini API: ' + error.message })
     };
   }
 };
