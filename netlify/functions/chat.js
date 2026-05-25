@@ -8,34 +8,31 @@ exports.handler = async function(event, context) {
     const messages = body.messages || [];
     const systemPrompt = body.system || '';
 
-    const geminiMessages = messages.map(msg => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: msg.content }]
-    }));
+    const groqMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+    ];
 
-    const geminiBody = {
-      system_instruction: {
-        parts: [{ text: systemPrompt }]
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
-      contents: geminiMessages,
-      generationConfig: {
-        maxOutputTokens: 1000,
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: groqMessages,
+        max_tokens: 1000,
         temperature: 0.7
-      }
-    };
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(geminiBody)
-      }
-    );
+      })
+    });
 
     const data = await response.json();
-    console.log('Gemini status:', response.status);
-    console.log('Gemini response:', JSON.stringify(data));
+    console.log('Groq status:', response.status);
+    console.log('Groq response:', JSON.stringify(data));
 
     if (data.error) {
       return {
@@ -46,7 +43,7 @@ exports.handler = async function(event, context) {
       };
     }
 
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'I could not generate a response.';
+    const text = data?.choices?.[0]?.message?.content || 'I could not generate a response.';
 
     return {
       statusCode: 200,
@@ -58,7 +55,7 @@ exports.handler = async function(event, context) {
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to reach Gemini API: ' + error.message })
+      body: JSON.stringify({ error: 'Failed to reach Groq API: ' + error.message })
     };
   }
 };
