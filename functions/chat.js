@@ -19,7 +19,7 @@ export async function onRequestPost(context) {
         'Authorization': `Bearer ${context.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'llama3-70b-8192',
         messages: groqMessages,
         max_tokens: 1000,
         temperature: 0.7
@@ -27,25 +27,34 @@ export async function onRequestPost(context) {
     });
 
     const data = await response.json();
-
-    if (data.error) {
-      return new Response(
-        JSON.stringify({ content: [{ type: 'text', text: `Error: ${data.error.message}` }] }),
-        { headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
     const text = data?.choices?.[0]?.message?.content || 'I could not generate a response.';
 
     return new Response(
       JSON.stringify({ content: [{ type: 'text', text }] }),
-      { headers: { 'Content-Type': 'application/json' } }
+      { headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }}
     );
 
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'Failed to reach Groq API: ' + error.message }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: 'Failed: ' + error.message }),
+      { status: 500, headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }}
     );
   }
+}
+
+export async function onRequestOptions() {
+  return new Response(null, {
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    }
+  });
+}
 }
