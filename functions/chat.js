@@ -24,7 +24,7 @@ export async function onRequestPost(context) {
       })
     });
     const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content || 'I could not generate a response.';
+    const text = data?.choices?.[0]?.message?.content || JSON.stringify(data);
     return new Response(
       JSON.stringify({ content: [{ type: 'text', text }] }),
       { headers: { 
@@ -34,7 +34,7 @@ export async function onRequestPost(context) {
     );
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: 'Failed: ' + error.message }),
+      JSON.stringify({ content: [{ type: 'text', text: 'Error: ' + error.message }] }),
       { status: 500, headers: { 
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
