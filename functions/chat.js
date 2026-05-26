@@ -19,7 +19,7 @@ export async function onRequestPost(context) {
         'Authorization': `Bearer ${context.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: groqMessages,
         max_tokens: 1000,
         temperature: 0.7
