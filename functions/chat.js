@@ -3,7 +3,6 @@ export async function onRequestPost(context) {
     const body = await context.request.json();
     const messages = body.messages || [];
     const systemPrompt = body.system || '';
-
     const groqMessages = [
       { role: 'system', content: systemPrompt },
       ...messages.map(msg => ({
@@ -11,7 +10,6 @@ export async function onRequestPost(context) {
         content: msg.content
       }))
     ];
-
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -25,10 +23,8 @@ export async function onRequestPost(context) {
         temperature: 0.7
       })
     });
-
     const data = await response.json();
     const text = data?.choices?.[0]?.message?.content || 'I could not generate a response.';
-
     return new Response(
       JSON.stringify({ content: [{ type: 'text', text }] }),
       { headers: { 
@@ -36,7 +32,6 @@ export async function onRequestPost(context) {
         'Access-Control-Allow-Origin': '*'
       }}
     );
-
   } catch (error) {
     return new Response(
       JSON.stringify({ error: 'Failed: ' + error.message }),
@@ -56,5 +51,4 @@ export async function onRequestOptions() {
       'Access-Control-Allow-Headers': 'Content-Type',
     }
   });
-}
 }
