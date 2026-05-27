@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kronexas — /docs</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #040810;
+  --bg2: #080f1e;
+  --bg3: #0d1628;
+  --card: #0d1a2e;
+  --card2: #112040;
+  --border: #1a3354;
+  --c1: #00c9ff;
+  --c2: #7c3aed;
+  --c3: #00e6b8;
+  --c4: #f59e0b;
+  --red: #ef4444;
+  --white: #ffffff;
+  --text: #e2eeff;
+  --text2: #7a9fc8;
+  --text3: #3d5a7a;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-body: 'Inter', sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+}
+
+/* ── OFFLINE / UNAVAILABLE ── */
+#unavailable {
+  display: none;
+  position: fixed; inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1.5rem;
+  text-align: center;
+}
+#unavailable h1 { font-family: var(--font-head); font-size: 3rem; color: var(--c1); }
+#unavailable p { color: var(--text2); max-width: 400px; line-height: 1.7; }
+#unavailable .code { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text3); margin-top: 1rem; }
+
+/* ── ADMIN PANEL ── */
+#admin-toggle {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  z-index: 1000;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 44px; height: 44px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  transition: all 0.2s;
+  color: var(--text2);
+}
+#admin-toggle:hover { border-color: var(--c1); color: var(--c1); }
+
+#admin-panel {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 2000;
+  background: rgba(4,8,16,0.95);
+  backdrop-filter: blur(12px);
+  align-items: center;
+  justify-content: center;
+}
+#admin-panel.open { display: flex; }
+
+.admin-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 2.5rem;
+  width: min(520px, 92vw);
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.admin-box h2 { font-family: var(--font-head); font-size: 1.4rem; color: var(--c1); margin-bottom: 2rem; }
+.admin-field { margin-bottom: 1.2rem; }
+.admin-field label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.admin-field input, .admin-field select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  outline: none;
+}
+.admin-field input:focus { border-color: var(--c1); }
+.toggle-row { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.toggle-switch {
+  position: relative; width: 52px; height: 28px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 14px; cursor: pointer; transition: all 0.3s;
+}
+.toggle-switch.on { background: var(--c1); border-color: var(--c1); }
+.toggle-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px;
+  background: var(--white);
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+.toggle-switch.on .toggle-knob { transform: translateX(24px); }
+.toggle-label { color: var(--text); font-size: 0.9rem; }
+.admin-btns { display: flex; gap: 0.8rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.btn-save {
+  background: var(--c1); color: #000;
+  border: none; border-radius: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  font-weight: 700; font-size: 0.85rem;
+  cursor: pointer; transition: opacity 0.2s;
+}
+.btn-save:hover { opacity: 0.85; }
+.btn-cancel {
+  background: transparent; color: var(--text2);
+  border: 1px solid var(--border); border-radius: 0.5rem;
+  padding: 0.65rem 1.5rem;
+  font-size: 0.85rem; cursor: pointer;
+}
+.btn-cancel:hover { border-color: var(--text2); }
+#admin-login-err { color: var(--red); font-size: 0.82rem; margin-top: 0.5rem; display: none; }
+
+/* ── SIDEBAR ── */
+#sidebar {
+  position: fixed; top: 0; left: 0;
+  width: 230px; height: 100vh;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  z-index: 100;
+  padding: 1.5rem 0;
+  transition: transform 0.3s;
+}
+.sidebar-logo {
+  padding: 0 1.5rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1rem;
+}
+.sidebar-logo .name {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--c1);
+  letter-spacing: 0.05em;
+}
+.sidebar-logo .sub {
+  font-size: 0.7rem;
+  color: var(--text3);
+  font-family: var(--font-mono);
+  margin-top: 0.2rem;
+}
+.nav-group { margin-bottom: 0.5rem; }
+.nav-group-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text3);
+  padding: 0.5rem 1.5rem;
+  font-family: var(--font-mono);
+}
+.nav-item {
+  display: block;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.82rem;
+  color: var(--text2);
+  text-decoration: none;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-item:hover, .nav-item.active {
+  color: var(--c1);
+  border-left-color: var(--c1);
+  background: rgba(0,201,255,0.05);
+}
+
+/* ── MAIN ── */
+#main {
+  margin-left: 230px;
+  min-height: 100vh;
+  padding: 3rem 3rem 6rem;
+  max-width: 1100px;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 4rem 0 3rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3rem;
+  position: relative;
+}
+.hero-tag {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--c1);
+  border: 1px solid var(--c1);
+  border-radius: 2rem;
+  padding: 0.3rem 0.9rem;
+  display: inline-block;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.05em;
+}
+.hero h1 {
+  font-family: var(--font-head);
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  font-weight: 800;
+  line-height: 1.0;
+  color: var(--white);
+  margin-bottom: 1rem;
+}
+.hero h1 span { color: var(--c1); }
+.hero p {
+  font-size: 1.05rem;
+  color: var(--text2);
+  max-width: 600px;
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+.hero-stats {
+  display: flex;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+.hero-stat .n {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--c1);
+}
+.hero-stat .l {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-top: 0.1rem;
+}
+.live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0,230,184,0.1);
+  border: 1px solid var(--c3);
+  border-radius: 2rem;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  color: var(--c3);
+  font-family: var(--font-mono);
+  margin-left: 1rem;
+  vertical-align: middle;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: var(--c3);
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── SECTION ── */
+.section {
+  margin-bottom: 4rem;
+  scroll-margin-top: 2rem;
+}
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-num {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text3);
+  min-width: 2rem;
+}
+.section-title {
+  font-family: var(--font-head);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--white);
+}
+.section-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--c2);
+  border: 1px solid var(--c2);
+  border-radius: 2rem;
+  padding: 0.2rem 0.6rem;
+  margin-left: auto;
+}
+
+/* ── CARDS ── */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 1rem; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: var(--c1); }
+.card-icon { font-size: 1.5rem; margin-bottom: 0.8rem; }
+.card h3 { font-family: var(--font-head); font-size: 0.95rem; color: var(--white); margin-bottom: 0.5rem; }
+.card p { font-size: 0.82rem; color: var(--text2); line-height: 1.6; }
+.card .accent { color: var(--c1); font-weight: 600; }
+
+/* ── PROBLEM / SOLUTION ── */
+.prob-sol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+@media(max-width:700px){ .prob-sol { grid-template-columns: 1fr; } }
+.prob-box {
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+.sol-box {
+  background: rgba(0,201,255,0.06);
+  border: 1px solid rgba(0,201,255,0.2);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+.ps-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+.prob-box .ps-label { color: var(--red); }
+.sol-box .ps-label { color: var(--c1); }
+.ps-item {
+  display: flex; gap: 0.7rem; margin-bottom: 0.9rem;
+  align-items: flex-start;
+}
+.ps-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 0.45rem;
+}
+.prob-box .ps-dot { background: var(--red); }
+.sol-box .ps-dot { background: var(--c1); }
+.ps-item p { font-size: 0.85rem; color: var(--text2); line-height: 1.5; }
+
+/* ── FLOW DIAGRAM ── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  margin: 1.5rem 0;
+}
+.flow-step {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.9rem 1.2rem;
+  font-size: 0.8rem;
+  text-align: center;
+  min-width: 110px;
+}
+.flow-step .step-label { color: var(--text3); font-size: 0.65rem; font-family: var(--font-mono); margin-bottom: 0.2rem; }
+.flow-step .step-name { color: var(--text); font-weight: 600; }
+.flow-arrow { color: var(--text3); padding: 0 0.4rem; font-size: 1rem; }
+
+/* ── STACK TABLE ── */
+.stack-table { width: 100%; border-collapse: collapse; }
+.stack-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text3);
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.stack-table td {
+  padding: 0.85rem 1rem;
+  font-size: 0.83rem;
+  color: var(--text2);
+  border-bottom: 1px solid rgba(26,51,84,0.5);
+  vertical-align: top;
+}
+.stack-table tr:last-child td { border-bottom: none; }
+.stack-table td:first-child { color: var(--text); font-weight: 600; width: 140px; }
+.tag-pill {
+  display: inline-block;
+  background: rgba(0,201,255,0.1);
+  border: 1px solid rgba(0,201,255,0.25);
+  color: var(--c1);
+  border-radius: 2rem;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  margin: 0.1rem;
+}
+.tag-pill.purple { background: rgba(124,58,237,0.1); border-color: rgba(124,58,237,0.3); color: #a78bfa; }
+.tag-pill.green { background: rgba(0,230,184,0.1); border-color: rgba(0,230,184,0.25); color: var(--c3); }
+.tag-pill.amber { background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.25); color: var(--c4); }
+
+/* ── API BLOCK ── */
+.api-block {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+}
+.api-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.method-badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 0.3rem;
+  min-width: 50px;
+  text-align: center;
+}
+.method-post { background: rgba(0,201,255,0.15); color: var(--c1); }
+.method-get { background: rgba(0,230,184,0.15); color: var(--c3); }
+.api-path { font-family: var(--font-mono); font-size: 0.82rem; color: var(--text); }
+.api-desc { font-size: 0.78rem; color: var(--text2); margin-left: auto; }
+.api-body { padding: 1rem 1.2rem; font-size: 0.78rem; color: var(--text2); line-height: 1.6; }
+pre.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1rem 1.2rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--c3);
+  overflow-x: auto;
+  margin-top: 0.8rem;
+  line-height: 1.6;
+}
+
+/* ── ROADMAP ── */
+.roadmap { display: flex; flex-direction: column; gap: 0; }
+.rm-item {
+  display: flex;
+  gap: 1.5rem;
+  position: relative;
+}
+.rm-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 11px; top: 28px;
+  width: 2px;
+  height: calc(100% + 0px);
+  background: var(--border);
+}
+.rm-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  flex-shrink: 0;
+  margin-top: 0.3rem;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1;
+}
+.rm-dot.done { border-color: var(--c3); background: rgba(0,230,184,0.15); }
+.rm-dot.active { border-color: var(--c1); background: rgba(0,201,255,0.15); }
+.rm-dot.planned { border-color: var(--text3); }
+.rm-dot span { width: 8px; height: 8px; border-radius: 50%; }
+.rm-dot.done span { background: var(--c3); }
+.rm-dot.active span { background: var(--c1); }
+.rm-dot.planned span { background: var(--text3); }
+.rm-content { padding-bottom: 2rem; flex: 1; }
+.rm-phase { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text3); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.rm-title { font-family: var(--font-head); font-size: 1rem; font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
+.rm-items { list-style: none; }
+.rm-items li { font-size: 0.82rem; color: var(--text2); padding: 0.2rem 0; display: flex; gap: 0.5rem; align-items: flex-start; }
+.rm-items li::before { content: '›'; color: var(--c1); flex-shrink: 0; }
+
+/* ── TEAM CARDS ── */
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1.2rem; }
+.team-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.team-card:hover { border-color: var(--c1); transform: translateY(-2px); }
+.team-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  margin: 0 auto 1rem;
+  display: block;
+  background: var(--card2);
+}
+.team-name { font-family: var(--font-head); font-size: 0.9rem; font-weight: 700; color: var(--white); margin-bottom: 0.3rem; }
+.team-role { font-size: 0.72rem; color: var(--c1); margin-bottom: 0.5rem; font-family: var(--font-mono); }
+.team-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 2rem;
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-family: var(--font-mono);
+}
+.team-badge.leader { border-color: var(--c4); color: var(--c4); background: rgba(245,158,11,0.08); }
+
+/* ── FEATURE MATRIX ── */
+.feature-row {
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(26,51,84,0.5);
+  gap: 1rem;
+  font-size: 0.83rem;
+}
+.feature-row:last-child { border-bottom: none; }
+.feature-name { flex: 1; color: var(--text); }
+.feature-status {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 2rem;
+  min-width: 80px;
+  text-align: center;
+}
+.status-live { background: rgba(0,230,184,0.1); color: var(--c3); border: 1px solid rgba(0,230,184,0.25); }
+.status-progress { background: rgba(0,201,255,0.1); color: var(--c1); border: 1px solid rgba(0,201,255,0.25); }
+.status-planned { background: rgba(61,90,122,0.2); color: var(--text3); border: 1px solid var(--border); }
+
+/* ── CHANGELOG ── */
+.changelog-item {
+  display: flex;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+.cl-version {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--c1);
+  min-width: 50px;
+  padding-top: 0.2rem;
+}
+.cl-content h4 { font-size: 0.9rem; color: var(--white); margin-bottom: 0.3rem; }
+.cl-content p { font-size: 0.8rem; color: var(--text2); line-height: 1.5; }
+.cl-date { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text3); margin-bottom: 0.3rem; }
+
+/* ── MERMAID-STYLE ARCH ── */
+.arch-diagram {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  overflow-x: auto;
+}
+.arch-row { display: flex; gap: 1rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.arch-box {
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  color: var(--text2);
+  white-space: nowrap;
+}
+.arch-box.user { border-color: var(--c4); color: var(--c4); }
+.arch-box.fe { border-color: var(--c2); color: #a78bfa; }
+.arch-box.fn { border-color: var(--c1); color: var(--c1); }
+.arch-box.ai { border-color: var(--c3); color: var(--c3); }
+.arch-box.db { border-color: var(--red); color: #fca5a5; }
+.arch-arrow { color: var(--text3); }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 1rem; }
+.kpi-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 1.2rem;
+  text-align: center;
+}
+.kpi-n { font-family: var(--font-head); font-size: 1.8rem; font-weight: 800; color: var(--c1); }
+.kpi-l { font-size: 0.75rem; color: var(--text2); margin-top: 0.3rem; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  #sidebar { transform: translateX(-100%); }
+  #sidebar.open { transform: translateX(0); }
+  #main { margin-left: 0; padding: 1.5rem 1.2rem 5rem; }
+  #menu-btn { display: flex; }
+  .hero h1 { font-size: 2.4rem; }
+}
+#menu-btn {
+  display: none;
+  position: fixed; top: 1rem; left: 1rem;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  width: 40px; height: 40px;
+  align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem;
+  color: var(--text2);
+}
+.divider { height: 1px; background: var(--border); margin: 3rem 0; }
+</style>
+</head>
+<body>
+
+<!-- UNAVAILABLE SCREEN -->
+<div id="unavailable">
+  <div>
+    <div style="font-family:var(--font-mono);font-size:3rem;color:var(--text3);margin-bottom:1rem;">403</div>
+    <h1>Not Available</h1>
+    <p>The Kronexas documentation is not currently accessible. Please check back during the scheduled availability window.</p>
+    <div class="code">kronexas.pages.dev/docs — access controlled</div>
+  </div>
+</div>
+
+<!-- ADMIN TOGGLE BUTTON -->
+<div id="admin-toggle" title="Admin">⚙</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-box">
+    <h2>⚙ Admin Panel</h2>
+    <div id="admin-login-view">
+      <div class="admin-field">
+        <label>Password</label>
+        <input type="password" id="admin-pw" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <div id="admin-login-err">Incorrect password.</div>
+      <div class="admin-btns">
+        <button class="btn-save" onclick="adminLogin()">Login</button>
+        <button class="btn-cancel" onclick="closeAdmin()">Cancel</button>
+      </div>
+    </div>
+    <div id="admin-controls-view" style="display:none">
+      <div class="toggle-row">
+        <div class="toggle-switch" id="vis-toggle" onclick="toggleVisibility()"><div class="toggle-knob"></div></div>
+        <span class="toggle-label" id="vis-label">Docs are <strong>VISIBLE</strong></span>
+      </div>
+      <div class="admin-field">
+        <label>Available From</label>
+        <input type="datetime-local" id="start-dt">
+      </div>
+      <div class="admin-field">
+        <label>Available Until</label>
+        <input type="datetime-local" id="end-dt">
+      </div>
+      <div class="admin-field">
+        <label>Status Message (shown when offline)</label>
+        <input type="text" id="offline-msg" placeholder="e.g. Available during judging window only">
+      </div>
+      <div class="admin-btns">
+        <button class="btn-save" onclick="saveAdmin()">Save Settings</button>
+        <button class="btn-cancel" onclick="closeAdmin()">Close</button>
+        <button class="btn-cancel" onclick="adminLogout()" style="margin-left:auto;color:var(--red);border-color:var(--red)">Logout</button>
+      </div>
+      <div style="margin-top:1rem;font-family:var(--font-mono);font-size:0.7rem;color:var(--text3)">
+        Default window: June 10 00:00 → June 14 23:59
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOBILE MENU -->
+<div id="menu-btn" onclick="toggleSidebar()">☰</div>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="name">KRONEXAS</div>
+    <div class="sub">/docs · v1.0</div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Overview</div>
+    <a class="nav-item active" onclick="scrollTo('hero')">Introduction</a>
+    <a class="nav-item" onclick="scrollTo('problem')">Problem & Solution</a>
+    <a class="nav-item" onclick="scrollTo('product')">Product Overview</a>
+    <a class="nav-item" onclick="scrollTo('features')">Feature Matrix</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Technical</div>
+    <a class="nav-item" onclick="scrollTo('architecture')">Architecture</a>
+    <a class="nav-item" onclick="scrollTo('dataflow')">Data Flow</a>
+    <a class="nav-item" onclick="scrollTo('stack')">Tech Stack</a>
+    <a class="nav-item" onclick="scrollTo('api')">API Docs</a>
+    <a class="nav-item" onclick="scrollTo('ai')">AI Layer</a>
+    <a class="nav-item" onclick="scrollTo('security')">Security</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Business</div>
+    <a class="nav-item" onclick="scrollTo('market')">Market</a>
+    <a class="nav-item" onclick="scrollTo('model')">Business Model</a>
+    <a class="nav-item" onclick="scrollTo('roadmap')">Roadmap</a>
+    <a class="nav-item" onclick="scrollTo('kpis')">KPIs</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Team</div>
+    <a class="nav-item" onclick="scrollTo('team')">Team</a>
+    <a class="nav-item" onclick="scrollTo('changelog')">Changelog</a>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- HERO -->
+  <div class="section" id="hero">
+    <div class="hero">
+      <div class="hero-tag">BuildFest 2026 · Team Lazy Stars</div>
+      <h1>KRONE<span>XAS</span></h1>
+      <p>Bangladesh's first AI-powered learning platform for SSC & HSC students. Personalised tutoring, adaptive quizzes, and structured exam prep — free for every student.
+        <span class="live-badge"><span class="live-dot"></span>LIVE</span>
+      </p>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="n">3M+</div><div class="l">Students per year</div></div>
+        <div class="hero-stat"><div class="n">100k</div><div class="l">Free AI req/day</div></div>
+        <div class="hero-stat"><div class="n">3</div><div class="l">Streams supported</div></div>
+        <div class="hero-stat"><div class="n">2</div><div class="l">Languages</div></div>
+        <div class="hero-stat"><div class="n">6</div><div class="l">Team members</div></div>
+      </div>
+      <div style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap">
+        <a href="https://kronexas.pages.dev" target="_blank" style="background:var(--c1);color:#000;padding:0.7rem 1.5rem;border-radius:0.5rem;font-weight:700;font-size:0.85rem;text-decoration:none;">↗ Live Site</a>
+        <a href="https://github.com/Rafi002701ha/Kronexas" target="_blank" style="background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.7rem 1.5rem;border-radius:0.5rem;font-size:0.85rem;text-decoration:none;">GitHub Repo</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROBLEM & SOLUTION -->
+  <div class="section" id="problem">
+    <div class="section-header">
+      <span class="section-num">01</span>
+      <h2 class="section-title">Problem & Solution</h2>
+      <span class="section-tag">YC PITCH</span>
+    </div>
+    <div class="prob-sol">
+      <div class="prob-box">
+        <div class="ps-label">❌ The Problem</div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Over 3 million students sit SSC/HSC every year with no personalised AI support</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Quality coaching costs 3,000–10,000 BDT/month — unaffordable for most families</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Global EdTech platforms are English-only — 70% of Bangladeshi students are Bangla-medium</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Generic study materials don't adapt to stream (Science/Arts/Commerce) or curriculum level</p></div>
+      </div>
+      <div class="sol-box">
+        <div class="ps-label">✅ The Solution</div>
+        <div class="ps-item"><div class="ps-dot"></div><p>AI tutor powered by Llama 3.3-70B via Groq — responds in Bangla or English</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Full personalisation: level (SSC/HSC) + stream (Science/Arts/Commerce) + language injected into every AI prompt</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>Adaptive MCQ quizzes with instant scoring and automatic weak-area detection</p></div>
+        <div class="ps-item"><div class="ps-dot"></div><p>100% free — hosted on Cloudflare Pages, AI on Groq free tier, DB on Supabase free tier</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT OVERVIEW -->
+  <div class="section" id="product">
+    <div class="section-header">
+      <span class="section-num">02</span>
+      <h2 class="section-title">Product Overview</h2>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🤖</div>
+        <h3>AI Tutor</h3>
+        <p>Groq Llama 3.3-70B answers curriculum questions in a structured 4-step format: <span class="accent">Explanation → Formula → Example → Exam Tip.</span> Bilingual support.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <h3>Adaptive Quizzes</h3>
+        <p>Subject-wise MCQ with strict no-peek rule. Answers revealed only after submission. <span class="accent">Automatic weak-area detection</span> by subject score comparison.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📊</div>
+        <h3>Smart Dashboard</h3>
+        <p>Study tracker, XP system, streak counter, leaderboard and <span class="accent">achievement badges.</span> Performance analytics updated in real time.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📚</div>
+        <h3>Resource Library</h3>
+        <p>Formula sheets, notes, and past papers organised by subject, stream and level. Content stored in <span class="accent">Supabase</span> for fast retrieval.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>4-Stage Onboarding</h3>
+        <p>Phone + Email → Language → Level → Stream. Every part of the platform <span class="accent">adapts automatically</span> to the student's selections.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🇧🇩</div>
+        <h3>Bangladesh-First</h3>
+        <p>Built for Bangladeshi ISP constraints — no Vercel (blocked), Cloudflare Pages works everywhere. <span class="accent">Full Bangla support</span> throughout.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURE MATRIX -->
+  <div class="section" id="features">
+    <div class="section-header">
+      <span class="section-num">03</span>
+      <h2 class="section-title">Feature Matrix</h2>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:0.75rem;overflow:hidden;">
+      <div class="feature-row" style="border-bottom:1px solid var(--border);background:var(--bg3);">
+        <div class="feature-name" style="color:var(--text3);font-size:0.7rem;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;">Feature</div>
+        <div class="feature-status" style="color:var(--text3);font-family:var(--font-mono);font-size:0.68rem;min-width:100px">Status</div>
+      </div>
+      ${[
+        ['AI Tutor (Groq Llama 3.3-70B)','live'],
+        ['Bangla/English bilingual support','live'],
+        ['SSC/HSC level personalisation','live'],
+        ['Science/Arts/Commerce stream context','live'],
+        ['Adaptive MCQ quizzes','live'],
+        ['Weak area auto-detection','live'],
+        ['Study streak tracker','live'],
+        ['XP & leaderboard system','live'],
+        ['Achievement badges','live'],
+        ['Formula sheets & resource library','live'],
+        ['User login (phone + email)','live'],
+        ['Supabase user data storage','live'],
+        ['Chat session history (Supabase)','progress'],
+        ['Quiz score persistence (Supabase)','progress'],
+        ['RAG pipeline from Supabase contents','planned'],
+        ['Mobile PWA / offline mode','planned'],
+        ['Teacher portal & PDF upload','planned'],
+        ['Fine-tuned Bangladesh curriculum model','planned'],
+      ].map(([name,status])=>`
+      <div class="feature-row">
+        <div class="feature-name">${name}</div>
+        <div class="feature-status status-${status}">${status==='live'?'✓ Live':status==='progress'?'In Progress':'Planned'}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="section" id="architecture">
+    <div class="section-header">
+      <span class="section-num">04</span>
+      <h2 class="section-title">Architecture Diagram</h2>
+      <span class="section-tag">TECHNICAL</span>
+    </div>
+    <div class="arch-diagram">
+      <div style="color:var(--text3);font-size:0.65rem;margin-bottom:1.5rem;text-transform:uppercase;letter-spacing:0.1em;">System Architecture — Kronexas v1.0</div>
+      <div class="arch-row">
+        <div class="arch-box user">Student Browser</div>
+        <div class="arch-arrow">──────►</div>
+        <div class="arch-box fe">index.html (Single File App)</div>
+        <div class="arch-arrow">──────►</div>
+        <div class="arch-box fn">Cloudflare Pages Function<br><span style="font-size:0.65rem;color:var(--text3)">functions/chat.js</span></div>
+      </div>
+      <div style="margin-left:340px;color:var(--text3);padding:0.3rem 0;">│</div>
+      <div class="arch-row">
+        <div style="width:340px"></div>
+        <div class="arch-box ai">Groq API<br><span style="font-size:0.65rem;color:var(--text3)">Llama 3.3-70B Versatile</span></div>
+      </div>
+      <div style="height:1.5rem"></div>
+      <div class="arch-row">
+        <div class="arch-box fe">index.html</div>
+        <div class="arch-arrow">──────►</div>
+        <div class="arch-box db">Supabase (PostgreSQL)<br><span style="font-size:0.65rem;color:var(--text3)">users · chat_sessions · quiz_scores · contents</span></div>
+      </div>
+      <div style="height:1.5rem"></div>
+      <div class="arch-row">
+        <div class="arch-box user">GitHub Repo<br><span style="font-size:0.65rem;color:var(--text3)">Rafi002701ha/Kronexas</span></div>
+        <div class="arch-arrow">──────►</div>
+        <div class="arch-box fn">Cloudflare Pages<br><span style="font-size:0.65rem;color:var(--text3)">Auto-deploy on push · No build step</span></div>
+        <div class="arch-arrow">──────►</div>
+        <div class="arch-box user">kronexas.pages.dev</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA FLOW -->
+  <div class="section" id="dataflow">
+    <div class="section-header">
+      <span class="section-num">05</span>
+      <h2 class="section-title">Data Flow</h2>
+    </div>
+    <div style="margin-bottom:1rem;font-size:0.82rem;color:var(--text2)">AI Tutor request flow:</div>
+    <div class="flow">
+      <div class="flow-step"><div class="step-label">INPUT</div><div class="step-name">Student Question</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">CONTEXT</div><div class="step-name">System Prompt Build</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">PROXY</div><div class="step-name">CF Function</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">AI</div><div class="step-name">Groq Llama 3</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">PARSE</div><div class="step-name">fmtAI()</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">OUTPUT</div><div class="step-name">Chat UI</div></div>
+    </div>
+    <div style="margin-top:1.5rem;margin-bottom:1rem;font-size:0.82rem;color:var(--text2)">User login flow:</div>
+    <div class="flow">
+      <div class="flow-step"><div class="step-label">INPUT</div><div class="step-name">Phone + Email</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">VALIDATE</div><div class="step-name">Client-side check</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">SAVE</div><div class="step-name">Supabase users</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">SESSION</div><div class="step-name">JS Memory</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="step-label">ACCESS</div><div class="step-name">Platform Unlocked</div></div>
+    </div>
+  </div>
+
+  <!-- TECH STACK -->
+  <div class="section" id="stack">
+    <div class="section-header">
+      <span class="section-num">06</span>
+      <h2 class="section-title">Technology Stack</h2>
+    </div>
+    <table class="stack-table">
+      <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td>Frontend</td><td><span class="tag-pill">HTML5</span><span class="tag-pill">Vanilla JS</span><span class="tag-pill">CSS3</span></td><td>Single-file app, no framework — fast load on low-end devices</td></tr>
+        <tr><td>AI Model</td><td><span class="tag-pill green">Llama 3.3-70B</span><span class="tag-pill green">Groq API</span></td><td>Open-weight model, free tier, personalised system prompts</td></tr>
+        <tr><td>Backend</td><td><span class="tag-pill">Cloudflare Pages</span><span class="tag-pill">functions/chat.js</span></td><td>Serverless proxy, 100k req/day free, no cold starts</td></tr>
+        <tr><td>Database</td><td><span class="tag-pill amber">Supabase</span><span class="tag-pill amber">PostgreSQL</span></td><td>Users, chat sessions, quiz scores, curriculum content</td></tr>
+        <tr><td>Auth</td><td><span class="tag-pill">Phone + Email</span><span class="tag-pill">Session JS</span></td><td>Lightweight access control, no password storage</td></tr>
+        <tr><td>Deployment</td><td><span class="tag-pill purple">GitHub</span><span class="tag-pill purple">Cloudflare CI</span></td><td>Auto-deploy on push, zero build step, global CDN</td></tr>
+        <tr><td>Dev Tools</td><td><span class="tag-pill">Claude Artifacts</span><span class="tag-pill">Gemini Canvas</span></td><td>Frontend generation, UI iteration, code review</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- API DOCS -->
+  <div class="section" id="api">
+    <div class="section-header">
+      <span class="section-num">07</span>
+      <h2 class="section-title">API Documentation</h2>
+    </div>
+    <div style="font-size:0.82rem;color:var(--text2);margin-bottom:1.5rem;">Kronexas exposes one internal API endpoint and consumes two external APIs.</div>
+
+    <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.8rem;">Internal Endpoint</div>
+    <div class="api-block">
+      <div class="api-header">
+        <span class="method-badge method-post">POST</span>
+        <span class="api-path">/chat</span>
+        <span class="api-desc">AI Tutor inference proxy</span>
+      </div>
+      <div class="api-body">
+        Accepts student message + context, proxies to Groq API, returns structured response. API key never exposed to browser.
+        <pre class="code-block">// Request body
+{
+  "messages": [...],        // last 8 messages
+  "system": "You are Kronexas, an AI tutor for SSC Science...",
+  "model": "llama-3.3-70b-versatile"
+}
+
+// Response
+{
+  "content": [{ "type": "text", "text": "..." }]
+}</pre>
+      </div>
+    </div>
+
+    <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin:1.5rem 0 0.8rem;">External APIs Consumed</div>
+    <div class="api-block">
+      <div class="api-header">
+        <span class="method-badge method-post">POST</span>
+        <span class="api-path">api.groq.com/openai/v1/chat/completions</span>
+        <span class="api-desc">Groq LLM</span>
+      </div>
+      <div class="api-body">Auth: Bearer token (GROQ_API_KEY env var). Model: llama-3.3-70b-versatile. Max tokens: 1000. Temperature: 0.7.</div>
+    </div>
+    <div class="api-block">
+      <div class="api-header">
+        <span class="method-badge method-post">POST</span>
+        <span class="api-path">lvfghdezyopklgossuam.supabase.co/rest/v1/users</span>
+        <span class="api-desc">Supabase DB</span>
+      </div>
+      <div class="api-body">Auth: Supabase anon key (public). Inserts phone + email on user login. RLS disabled for public insert.</div>
+    </div>
+  </div>
+
+  <!-- AI LAYER -->
+  <div class="section" id="ai">
+    <div class="section-header">
+      <span class="section-num">08</span>
+      <h2 class="section-title">AI Layer</h2>
+      <span class="section-tag">CORE</span>
+    </div>
+    <div class="card-grid">
+      <div class="card">
+        <h3>Model</h3>
+        <p><span class="accent">Llama 3.3-70B Versatile</span> — open-weight Meta model via Groq's LPU inference. Selected for speed, cost (free), and instruction-following quality.</p>
+      </div>
+      <div class="card">
+        <h3>Personalisation</h3>
+        <p>Every request injects <span class="accent">level + stream + language</span> into the system prompt. The model adapts vocabulary, curriculum scope, and response language automatically.</p>
+      </div>
+      <div class="card">
+        <h3>Response Format</h3>
+        <p>Enforced 4-step structure: <span class="accent">Explanation → Formula → Example → Exam Tip.</span> Custom <code>fmtAI()</code> function parses markdown to HTML before display.</p>
+      </div>
+      <div class="card">
+        <h3>Token Optimisation</h3>
+        <p>3 controls: <span class="accent">max_tokens: 1000</span> hard cap, <span class="accent">slice(-8)</span> context window, dense system prompt. Keeps usage within Groq free tier.</p>
+      </div>
+      <div class="card">
+        <h3>RAG (Planned)</h3>
+        <p>Supabase <code>contents</code> table stores 18+ SSC/HSC curriculum entries. Next phase: <span class="accent">pgvector embeddings</span> for semantic retrieval injected into prompts.</p>
+      </div>
+      <div class="card">
+        <h3>Guardrails</h3>
+        <p>System prompt restricts AI to <span class="accent">educational topics only.</span> No PII sent to Groq. API key server-side only. Off-topic queries politely redirected.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECURITY -->
+  <div class="section" id="security">
+    <div class="section-header">
+      <span class="section-num">09</span>
+      <h2 class="section-title">Security</h2>
+    </div>
+    <div class="card-grid">
+      <div class="card"><h3>API Key Protection</h3><p>GROQ_API_KEY stored in Cloudflare environment variables. Never in client code, never in GitHub repo.</p></div>
+      <div class="card"><h3>No Password Storage</h3><p>Zero passwords stored anywhere. Phone + email only, held in JS session memory — reset on page refresh.</p></div>
+      <div class="card"><h3>No PII to AI</h3><p>Only question text and academic context forwarded to Groq. Names, phone, email never sent to any AI model.</p></div>
+      <div class="card"><h3>Input Sanitisation</h3><p>.trim() on all inputs, @ validation on email, format check on phone before any processing or DB write.</p></div>
+    </div>
+  </div>
+
+  <!-- MARKET -->
+  <div class="section" id="market">
+    <div class="section-header">
+      <span class="section-num">10</span>
+      <h2 class="section-title">Market Opportunity</h2>
+      <span class="section-tag">BUSINESS</span>
+    </div>
+    <div class="card-grid">
+      <div class="card"><div class="card-icon">🎓</div><h3>3M+ Students/Year</h3><p>Over 3 million students sit SSC and HSC exams annually in Bangladesh — the primary addressable market.</p></div>
+      <div class="card"><div class="card-icon">💡</div><h3>Zero AI Competitors</h3><p>No Bangladeshi platform currently offers AI-powered, bilingual, curriculum-aligned tutoring at this level.</p></div>
+      <div class="card"><div class="card-icon">🌍</div><h3>Global Expansion</h3><p>Model replicable for other South Asian curricula (India SSC, Pakistan Matric, Nepal SLC) with minimal changes.</p></div>
+      <div class="card"><div class="card-icon">📱</div><h3>Mobile-First</h3><p>90%+ of Bangladeshi students use smartphones. PWA + offline mode (planned) makes Kronexas accessible everywhere.</p></div>
+    </div>
+  </div>
+
+  <!-- BUSINESS MODEL -->
+  <div class="section" id="model">
+    <div class="section-header">
+      <span class="section-num">11</span>
+      <h2 class="section-title">Business Model</h2>
+    </div>
+    <div class="card-grid">
+      <div class="card"><h3>Free Core (Now)</h3><p>Full platform free for all students. Groq free tier covers 100k requests/day. Zero cost to run at current scale.</p></div>
+      <div class="card"><h3>Premium Tier (Planned)</h3><p>Advanced features: AI mock exams, personalised study plans, PDF uploads, priority AI responses.</p></div>
+      <div class="card"><h3>School Licensing</h3><p>White-label for coaching centres across Bangladesh. Bulk student accounts with admin dashboard.</p></div>
+      <div class="card"><h3>Content Marketplace</h3><p>Teacher portal for uploading and selling study materials. Revenue share model.</p></div>
+    </div>
+  </div>
+
+  <!-- ROADMAP -->
+  <div class="section" id="roadmap">
+    <div class="section-header">
+      <span class="section-num">12</span>
+      <h2 class="section-title">Product Roadmap</h2>
+    </div>
+    <div class="roadmap">
+      <div class="rm-item">
+        <div class="rm-dot done"><span></span></div>
+        <div class="rm-content">
+          <div class="rm-phase">Phase 1 · Complete</div>
+          <div class="rm-title">Core Platform Launch</div>
+          <ul class="rm-items">
+            <li>AI tutor with Groq Llama 3.3-70B</li>
+            <li>4-stage personalisation onboarding</li>
+            <li>MCQ quiz system with no-peek rule</li>
+            <li>Dashboard, XP, leaderboard, badges</li>
+            <li>Cloudflare Pages deployment</li>
+            <li>Supabase user data collection</li>
+          </ul>
+        </div>
+      </div>
+      <div class="rm-item">
+        <div class="rm-dot active"><span></span></div>
+        <div class="rm-content">
+          <div class="rm-phase">Phase 2 · In Progress</div>
+          <div class="rm-title">Database Integration</div>
+          <ul class="rm-items">
+            <li>Chat session persistence in Supabase</li>
+            <li>Quiz score history and analytics</li>
+            <li>User progress tracking across sessions</li>
+            <li>Leaderboard with real stored scores</li>
+          </ul>
+        </div>
+      </div>
+      <div class="rm-item">
+        <div class="rm-dot planned"><span></span></div>
+        <div class="rm-content">
+          <div class="rm-phase">Phase 3 · Planned</div>
+          <div class="rm-title">RAG & Content Intelligence</div>
+          <ul class="rm-items">
+            <li>pgvector embeddings on Supabase contents table</li>
+            <li>Semantic retrieval injected into AI prompts</li>
+            <li>Curriculum-grounded answers with source citations</li>
+          </ul>
+        </div>
+      </div>
+      <div class="rm-item">
+        <div class="rm-dot planned"><span></span></div>
+        <div class="rm-content">
+          <div class="rm-phase">Phase 4 · Planned</div>
+          <div class="rm-title">Scale & Monetisation</div>
+          <ul class="rm-items">
+            <li>Mobile PWA with offline mode</li>
+            <li>Teacher portal and PDF upload pipeline</li>
+            <li>School partnership white-label</li>
+            <li>Premium tier features</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="section" id="kpis">
+    <div class="section-header">
+      <span class="section-num">13</span>
+      <h2 class="section-title">KPIs & Analytics</h2>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-n">100k</div><div class="kpi-l">Daily AI capacity (Groq free)</div></div>
+      <div class="kpi-card"><div class="kpi-n">1000</div><div class="kpi-l">Max tokens per response</div></div>
+      <div class="kpi-card"><div class="kpi-n">8</div><div class="kpi-l">Message context window</div></div>
+      <div class="kpi-card"><div class="kpi-n">3</div><div class="kpi-l">Streams covered</div></div>
+      <div class="kpi-card"><div class="kpi-n">2</div><div class="kpi-l">Languages supported</div></div>
+      <div class="kpi-card"><div class="kpi-n">18+</div><div class="kpi-l">Curriculum topics in DB</div></div>
+    </div>
+    <div style="margin-top:1.5rem;font-size:0.82rem;color:var(--text2);line-height:1.7;">
+      Tracked metrics: AI tutor usage (Groq dashboard), user signups (Supabase users table), quiz completions, session duration, weak-area flags per subject. Full analytics dashboard planned for Phase 2.
+    </div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="section" id="team">
+    <div class="section-header">
+      <span class="section-num">14</span>
+      <h2 class="section-title">Team — Lazy Stars</h2>
+      <span class="section-tag">BUILDFEST 2026</span>
+    </div>
+    <div style="font-size:0.82rem;color:var(--text2);margin-bottom:1.5rem;font-style:italic;">"Efficiency is just calculated laziness."</div>
+    <div class="team-grid">
+      <div class="team-card">
+        <img class="team-avatar" src="team/rafi.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%2300c9ff%22>R</text></svg>'" alt="Rafiul Islam Rafi">
+        <div class="team-name">Rafiul Islam Rafi</div>
+        <div class="team-role">Team Leader · Full Stack</div>
+        <div class="team-badge leader">Leader</div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="team/safa.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%237c3aed%22>S</text></svg>'" alt="Safa Samad">
+        <div class="team-name">Safa Samad</div>
+        <div class="team-role">UI/UX · Frontend</div>
+        <div class="team-badge">Member</div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="team/abhijeet.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%2300e6b8%22>A</text></svg>'" alt="Abhijeet S">
+        <div class="team-name">Abhijeet S</div>
+        <div class="team-role">UI/UX · Frontend</div>
+        <div class="team-badge">Member</div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="team/tasnima.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%23f59e0b%22>T</text></svg>'" alt="Tasnima Mahi">
+        <div class="team-name">Tasnima Mahi</div>
+        <div class="team-role">Business Analyst</div>
+        <div class="team-badge">Member</div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="team/eusha.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%23ef4444%22>K</text></svg>'" alt="Kazi Eamin Azad Eusha">
+        <div class="team-name">Kazi Eamin Azad Eusha</div>
+        <div class="team-role">Data Scientist</div>
+        <div class="team-badge">Member</div>
+      </div>
+      <div class="team-card">
+        <img class="team-avatar" src="team/natik.jpg" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2272%22 height=%2272%22><rect width=%2272%22 height=%2272%22 fill=%22%230d1a2e%22/><text x=%2236%22 y=%2244%22 font-size=%2228%22 text-anchor=%22middle%22 fill=%22%2300c9ff%22>N</text></svg>'" alt="Natik As Sami">
+        <div class="team-name">Natik As Sami</div>
+        <div class="team-role">UI/UX · Frontend</div>
+        <div class="team-badge">Member</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHANGELOG -->
+  <div class="section" id="changelog">
+    <div class="section-header">
+      <span class="section-num">15</span>
+      <h2 class="section-title">Changelog</h2>
+    </div>
+    <div class="changelog-item">
+      <div class="cl-version">v1.0</div>
+      <div class="cl-content">
+        <div class="cl-date">May 27, 2026</div>
+        <h4>Cloudflare Migration + Groq Integration</h4>
+        <p>Migrated from Netlify to Cloudflare Pages. Fixed 405 error (wrangler.json conflict). Switched from decommissioned llama3-70b-8192 to llama-3.3-70b-versatile. Fixed fetch URL, CORS headers, reply parsing. Supabase user data collection added.</p>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="cl-version">v0.9</div>
+      <div class="cl-content">
+        <div class="cl-date">May 24, 2026</div>
+        <h4>Netlify + Groq Setup</h4>
+        <p>Switched from Gemini (quota exhausted) to Groq free tier. Netlify function limit hit — triggered migration to Cloudflare.</p>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="cl-version">v0.8</div>
+      <div class="cl-content">
+        <div class="cl-date">May 22, 2026</div>
+        <h4>Gemini Integration</h4>
+        <p>Switched from Anthropic (requires $5 credit) to Google Gemini 2.0 Flash free tier. Netlify deployment confirmed working in Bangladesh.</p>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="cl-version">v0.5</div>
+      <div class="cl-content">
+        <div class="cl-date">May 2026</div>
+        <h4>Initial Build</h4>
+        <p>Core platform built — AI tutor, MCQ quizzes, dashboard, XP system, leaderboard, resource library. Deployed on Vercel (later blocked by Bangladeshi ISPs), moved to Netlify.</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── ACCESS CONTROL ──────────────────────────────────
+const ADMIN_PW = 'KronexasDocs@2026';
+const DEFAULT_START = '2026-06-10T00:00';
+const DEFAULT_END   = '2026-06-14T23:59';
+
+function loadSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('kronexas_docs_settings')) || {
+      visible: true,
+      start: DEFAULT_START,
+      end: DEFAULT_END
+    };
+  } catch(e) { return { visible: true, start: DEFAULT_START, end: DEFAULT_END }; }
+}
+
+function saveSettings(s) {
+  localStorage.setItem('kronexas_docs_settings', JSON.stringify(s));
+}
+
+function checkAccess() {
+  const s = loadSettings();
+  if (!s.visible) { showUnavailable(); return; }
+  const now = new Date();
+  const start = s.start ? new Date(s.start) : null;
+  const end   = s.end   ? new Date(s.end)   : null;
+  if ((start && now < start) || (end && now > end)) { showUnavailable(); }
+}
+
+function showUnavailable() {
+  document.getElementById('unavailable').style.display = 'flex';
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('sidebar').style.display = 'none';
+}
+
+// ── ADMIN ───────────────────────────────────────────
+let adminLoggedIn = false;
+
+document.getElementById('admin-toggle').addEventListener('click', () => {
+  document.getElementById('admin-panel').classList.add('open');
+  if (adminLoggedIn) showControls();
+});
+
+function closeAdmin() {
+  document.getElementById('admin-panel').classList.remove('open');
+}
+
+function adminLogin() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PW) {
+    adminLoggedIn = true;
+    document.getElementById('admin-login-err').style.display = 'none';
+    showControls();
+  } else {
+    document.getElementById('admin-login-err').style.display = 'block';
+  }
+}
+
+function adminLogout() {
+  adminLoggedIn = false;
+  document.getElementById('admin-controls-view').style.display = 'none';
+  document.getElementById('admin-login-view').style.display = 'block';
+  document.getElementById('admin-pw').value = '';
+  closeAdmin();
+}
+
+function showControls() {
+  const s = loadSettings();
+  document.getElementById('admin-login-view').style.display = 'none';
+  document.getElementById('admin-controls-view').style.display = 'block';
+  document.getElementById('start-dt').value = s.start || DEFAULT_START;
+  document.getElementById('end-dt').value = s.end || DEFAULT_END;
+  const tog = document.getElementById('vis-toggle');
+  if (s.visible) { tog.classList.add('on'); document.getElementById('vis-label').innerHTML = 'Docs are <strong>VISIBLE</strong>'; }
+  else { tog.classList.remove('on'); document.getElementById('vis-label').innerHTML = 'Docs are <strong>HIDDEN</strong>'; }
+}
+
+function toggleVisibility() {
+  const s = loadSettings();
+  s.visible = !s.visible;
+  saveSettings(s);
+  const tog = document.getElementById('vis-toggle');
+  if (s.visible) { tog.classList.add('on'); document.getElementById('vis-label').innerHTML = 'Docs are <strong>VISIBLE</strong>'; }
+  else { tog.classList.remove('on'); document.getElementById('vis-label').innerHTML = 'Docs are <strong>HIDDEN</strong>'; }
+}
+
+function saveAdmin() {
+  const s = loadSettings();
+  s.start = document.getElementById('start-dt').value;
+  s.end   = document.getElementById('end-dt').value;
+  saveSettings(s);
+  closeAdmin();
+  alert('Settings saved. Refreshing...');
+  location.reload();
+}
+
+// ── NAVIGATION ──────────────────────────────────────
+function scrollTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  event.target.classList.add('active');
+  if (window.innerWidth <= 768) document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ── INIT ────────────────────────────────────────────
+checkAccess();
+
+// Highlight nav on scroll
+const sections = ['hero','problem','product','features','architecture','dataflow','stack','api','ai','security','market','model','roadmap','kpis','team','changelog'];
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 100) current = id;
+  });
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('active');
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes(current)) n.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
